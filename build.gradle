@@ -2,6 +2,7 @@
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'provided-base'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.0'
@@ -11,10 +12,6 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-	compile 'com.google.guava:guava:18.0-rc1'
-    testCompile 'org.testng:testng:6.8.8'
-}
 
 sourceCompatibility = 1.8
 version = '0.1'
@@ -23,4 +20,21 @@ jar {
         attributes 'Implementation-Title': 'Game of Life with Lombok', 'Implementation-Version': version
 		attributes 'Main-Class': 'com.nate_land.gol_lombok.Driver'
     }
+}
+
+
+buildscript {
+    repositories {
+		jcenter()
+	}
+
+    dependencies {
+        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:1.12.+'
+    }
+}
+
+dependencies {
+	compile 'com.google.guava:guava:18.0-rc1'
+    testCompile 'org.testng:testng:6.8.8'
+	provided 'org.projectlombok:lombok:1.14.4'
 }
