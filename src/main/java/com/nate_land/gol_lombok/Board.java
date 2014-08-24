@@ -1,6 +1,7 @@
 package com.nate_land.gol_lombok;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -12,7 +13,7 @@ import lombok.Value;
 /**
  *
  */
-public class Board {
+@Value public class Board {
 	private final int size;
 	private final int maxIterations;
 	private final int currentIteration;
@@ -56,13 +57,20 @@ public class Board {
 		ImmutableList.Builder<List<Character>> builder = buildBoard(readBoard);
 		this.gameBoard = builder.build();
 	}
-
+	private static final Character UNSET = ' ';
 	private ImmutableList.Builder<List<Character>> buildBoard(List<String> readBoard) {
 		ImmutableList.Builder<List<Character>> builder = new ImmutableList.Builder<>();
 		for(int i = 0; i < size; i++) {
-			List<Character> chars = Lists.newArrayListWithExpectedSize(size);
+			List<Character> chars;
+			if (i >= readBoard.size()) {
+				chars = IntStream.range(0,size).mapToObj(x -> UNSET).collect(Collectors.<Character>toList());
+				builder.add(chars);
+				continue;
+			}
+			chars = Lists.newArrayListWithExpectedSize(size);
 			for(int j = 0; j < size; j++) {
-				chars.add(readBoard.get(i).charAt(j));
+				String s = readBoard.get(i);
+				chars.add(j < s.length() ? s.charAt(j) : ' ');
 			}
 		
 			builder.add(chars);
