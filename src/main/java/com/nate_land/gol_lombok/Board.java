@@ -5,7 +5,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import lombok.Value;
@@ -17,24 +16,27 @@ import lombok.Value;
 	private final int size;
 	private final int maxIterations;
 	private final int currentIteration;
-	private final List<List<Character>> gameBoard;
+	private final List<String> gameBoard;
 	
-	public Board(Board board) {
-		this.gameBoard = board.gameBoard;
-		this.size = board.size;
-		this.currentIteration = board.currentIteration+1;
-		this.maxIterations = board.maxIterations;
-		nodes().forEach(n -> {
+	public Board(final Board initialBoard) {
+		this.size = initialBoard.size;
+		this.gameBoard = this.buildBoard(initialBoard.gameBoard);
+		this.currentIteration = initialBoard.currentIteration+1;
+		this.maxIterations = initialBoard.maxIterations;
+		initialBoard.nodes(initialBoard).forEach(n -> {
+			final long nCount = n.neighborCount();
 			if (!n.isAlive()) {
-				if (n.neighborCount() == 3) {
+				if (nCount == 3) {
 					setNode(n, true);
 				}
 			} else {
-				if (n.neighborCount() < 2) {
+				List<String> neigh = n.neighbors().map(ne -> ne.isAlive()?"x":"").collect(Collectors.<String>toList());
+				List<Node> nodes = n.neighbors().collect(Collectors.<Node>toList());
+				if (nCount < 2) {
 					setNode(n, false);
-				} else if (n.neighborCount() == 2 || n.neighborCount() == 3) {
+				} else if (nCount == 2 || nCount == 3) {
 					setNode(n, true);
-				} else if (n.neighborCount() > 3) {
+				} else if (nCount > 3) {
 					setNode(n, false);
 				}
 			}
@@ -42,11 +44,13 @@ import lombok.Value;
 	}
 
 	private void setNode(Node n, boolean alive) {
-		this.gameBoard.get(n.getRow()).set(n.getColumn(), alive ? 'x' : ' ');
+		StringBuilder sb = new StringBuilder(this.gameBoard.get(n.getRow()));
+		sb.setCharAt(n.getColumn(), alive ? 'x' : UNSET);
+		this.gameBoard.set(n.getRow(), sb.toString());
 	}
 
-	Stream<Node> nodes() {
-		return IntStream.range(0, size*size-1).mapToObj(i -> Node.of(this, i / this.size, i % this.size));
+	Stream<Node> nodes(Board initialBoard) {
+		return IntStream.range(0, size*size).mapToObj(i -> Node.of(initialBoard, i / this.size, i % this.size));
 	}
 
 	public Board(List<String> readBoard, int maxIterations, int currentIteration) {
@@ -54,39 +58,47 @@ import lombok.Value;
 		this.maxIterations = maxIterations;
 		this.currentIteration = currentIteration;
 
-		ImmutableList.Builder<List<Character>> builder = buildBoard(readBoard);
-		this.gameBoard = builder.build();
+		this.gameBoard = this.buildBoard(readBoard);
 	}
 	private static final Character UNSET = ' ';
-	private ImmutableList.Builder<List<Character>> buildBoard(List<String> readBoard) {
-		ImmutableList.Builder<List<Character>> builder = new ImmutableList.Builder<>();
+	private List<String> buildBoard(List<String> readBoard) {
+//		ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
+		List<String> builder = Lists.newLinkedList();
 		for(int i = 0; i < size; i++) {
-			List<Character> chars;
 			if (i >= readBoard.size()) {
-				chars = IntStream.range(0,size).mapToObj(x -> UNSET).collect(Collectors.<Character>toList());
+				String chars = IntStream.range(0,size).mapToObj(x -> " ").collect(Collectors.joining(""));
 				builder.add(chars);
 				continue;
 			}
-			chars = Lists.newArrayListWithExpectedSize(size);
+			StringBuilder chars = new StringBuilder(size);
+			final String row = readBoard.get(i);
 			for(int j = 0; j < size; j++) {
-				String s = readBoard.get(i);
-				chars.add(j < s.length() ? s.charAt(j) : ' ');
+				if (j < row.length() ) {
+					char c = row.charAt(j);
+					if (c == 'x') {
+						int x = 1;
+					}
+					chars.append(c);
+				} else {
+					chars.append(UNSET);
+				}
 			}
 		
-			builder.add(chars);
+			builder.add(chars.toString());
 		}
-		List<List<Character>> board = builder.build();
 		return builder;
 	}
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		this.gameBoard.stream().forEach(l -> {
-			l.stream().forEach(c -> sb.append(c));
-			sb.append("\n");
-		} );
-		return sb.toString();
+//		StringBuilder sb = new StringBuilder();
+		return this.gameBoard.stream().collect(Collectors.joining("\n"));
+				
+//				.forEach(l -> {
+//			sb.append(l);
+//			sb.append("\n");
+//		} );
+//		return sb.toString();
 	}
 
 	public boolean hasNext() {
@@ -98,9 +110,13 @@ import lombok.Value;
 		private final Board board;
 		private final int row;
 		private final int column;
+		
+		public String toString() {
+			return String.format("[%s,%s]=%s",row, column, this.isAlive());
+		}
 
 		public boolean isAlive() {
-			return board.gameBoard.get(row).get(column) == 'x';
+			return board.gameBoard.get(row).charAt(column) == 'x';
 		}
 
 		public long neighborCount() {
@@ -122,7 +138,7 @@ import lombok.Value;
 			if (row - 1 >= 0) { // top
 				rv.add(of(this.board, row - 1, column ));
 			}
-			if (row - 1 >- 0 && column + 1 < board.size) { //top right
+			if (row - 1 >= 0 && column + 1 < board.size) { //top right
 				rv.add(of(this.board, row - 1, column + 1));
 			}
 			if (column - 1 >= 0) { // left
