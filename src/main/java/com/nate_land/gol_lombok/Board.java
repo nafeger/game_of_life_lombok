@@ -23,15 +23,15 @@ import lombok.Value;
 		this.gameBoard = this.buildBoard(initialBoard.gameBoard);
 		this.currentIteration = initialBoard.currentIteration+1;
 		this.maxIterations = initialBoard.maxIterations;
-		initialBoard.nodes(initialBoard).forEach(n -> {
+		initialBoard.nodes(initialBoard).parallel().forEach(n -> {
 			final long nCount = n.neighborCount();
 			if (!n.isAlive()) {
 				if (nCount == 3) {
 					setNode(n, true);
 				}
 			} else {
-				List<String> neigh = n.neighbors().map(ne -> ne.isAlive()?"x":"").collect(Collectors.<String>toList());
-				List<Node> nodes = n.neighbors().collect(Collectors.<Node>toList());
+//				List<String> neigh = n.neighbors().map(ne -> ne.isAlive()?"x":"").collect(Collectors.<String>toList());
+//				List<Node> nodes = n.neighbors().collect(Collectors.<Node>toList());
 				if (nCount < 2) {
 					setNode(n, false);
 				} else if (nCount == 2 || nCount == 3) {
@@ -62,7 +62,6 @@ import lombok.Value;
 	}
 	private static final Character UNSET = ' ';
 	private List<String> buildBoard(List<String> readBoard) {
-//		ImmutableList.Builder<String> builder = new ImmutableList.Builder<>();
 		List<String> builder = Lists.newLinkedList();
 		for(int i = 0; i < size; i++) {
 			if (i >= readBoard.size()) {
@@ -75,9 +74,6 @@ import lombok.Value;
 			for(int j = 0; j < size; j++) {
 				if (j < row.length() ) {
 					char c = row.charAt(j);
-					if (c == 'x') {
-						int x = 1;
-					}
 					chars.append(c);
 				} else {
 					chars.append(UNSET);
@@ -91,14 +87,7 @@ import lombok.Value;
 
 	@Override
 	public String toString() {
-//		StringBuilder sb = new StringBuilder();
 		return this.gameBoard.stream().collect(Collectors.joining("\n"));
-				
-//				.forEach(l -> {
-//			sb.append(l);
-//			sb.append("\n");
-//		} );
-//		return sb.toString();
 	}
 
 	public boolean hasNext() {
@@ -132,19 +121,19 @@ import lombok.Value;
 		 */
 		public Stream<Node> neighbors() {
 			List<Node> rv = Lists.newLinkedList();
-			if (row - 1 >= 0 && column - 1 >= 0) { // top left
+			if (row - 1 >= 0 && 	column - 1 >= 0) { // top left
 				rv.add(of(this.board, row - 1, column - 1));
 			}
-			if (row - 1 >= 0) { // top
+			if (row - 1 >= 0						) { // top
 				rv.add(of(this.board, row - 1, column ));
 			}
-			if (row - 1 >= 0 && column + 1 < board.size) { //top right
+			if (row - 1 >= 0 && 	column + 1 < board.size) { //top right
 				rv.add(of(this.board, row - 1, column + 1));
 			}
-			if (column - 1 >= 0) { // left
+			if (					column - 1 >= 0) { // left
 				rv.add(of(this.board, row , column - 1));
 			}
-			if (column + 1 < board.size) { // right
+			if (					column + 1 < board.size) { // right
 				rv.add(of(this.board, row , column + 1));
 			}
 			if (row + 1 < board.size && column - 1 >= 0) { // bottom left
